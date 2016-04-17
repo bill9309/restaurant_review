@@ -4,14 +4,23 @@
 <head>
   <title>Restaurant Review Visualization</title>
   <meta charset="utf-8">
-  <script type = "text/javascript" src = "jquery-1.12.3.min.js"></script>
-  <script type = "text/javascript" src = "bootstrap.min.js"></script>
-  <script type = "text/javascript" src = "d3.min.js"></script>
-  <script type = "text/javascript" src = "jquery.tipsy.js"></script>
+  <script type = "text/javascript" src = "lib/jquery-1.12.3.min.js"></script>
+  <script type = "text/javascript" src = "lib/bootstrap.min.js"></script>
+  <script type = "text/javascript" src = "lib/d3.min.js"></script>
+  <script type = "text/javascript" src = "lib/jquery.tipsy.js"></script>
+  <script type = "text/javascript" src = "lib/bootstrap-switch.min.js"></script>
+  <link rel = "stylesheet" type = "text/css" href = "lib/bootstrap.min.css">
+  <link rel = "stylesheet" type = "text/css" href = "lib/bootstrap-switch.min.css">
+  <link rel = "stylesheet" type = "text/css" href = "lib/tipsy.css">
 </head>
 <body>
   <h1 align = "center">Restaurant Review Visualization</h1>
+  <input type = "checkbox" id = "topic_toggle" name = "my-checkbox" data-on-text = "General Aspects" data-off-text = "Food and Drinks"  checked>
   <script type = "text/javascript">
+  $("[name='my-checkbox']").bootstrapSwitch();
+  </script>
+  <script type = "text/javascript">
+  var svg;
   function getRandomColor(){
     var letters = '0123456789ABCDEF'.split('');
     var color = '#'
@@ -20,83 +29,111 @@
     }
     return color;
   }
-  var svg = d3.select("body").append("svg")
+  function draw_svg(){
+  svg = d3.select("body").append("svg")
   .attr("width",700)
   .attr("height",700)
   .style("display","block")
   .style("margin-left","auto")
   .style("margin-right","auto")
   .attr("id","canvas");
-  d3.csv("new_data_tfidf.csv",function(error,data){
-    data_tfidf = [];
-    data_nodes = [];
-    data_edges = [];
-    dictionary = {};
-    for(i = 0; i < data.length; i++){
-      data_tfidf.push(data[i]);
-      //dictionary[data[i]['']]
-    }
-    for(i = 0; i < data_tfidf.length; i++){
-      data_nodes.push({name:data_tfidf[i]['topic']});
-    }
-    data_nodes.push({name:'center'});
-    for(i = 0; i < data_nodes.length - 1; i++){
-      //data_edges.push({source: i, target: data_nodes.length - 1});
-      data_edges.push({source: i, target: i + 1})
-    }
-    var force = d3.layout.force()
-    .nodes(data_nodes)
-    .links(data_edges)
-    .size([600,600])
-    .linkDistance([90])
-    .charge([-100])
-    .start();
-
-    var edges = d3.select("#canvas").selectAll("line")
-    .data(data_edges)
-    .enter()
-    .append("line")
-    .style("stroke","#ccc")
-    .style("stroke-width",0);
-    var nodes = d3.select("#canvas").selectAll("circle")
-    .data(data_nodes)
-    .enter()
-    .append("circle")
-    .style("fill","green")
-    .attr("id",function(d){
-      return d.name;
-    })
-    .attr("r",function(d){
-      if(d.name == 'center'){
-        return 0;
+}
+  draw_svg();
+  function draw_graph(data_file){
+    d3.csv(data_file,function(error,data){
+      var data_tfidf = [];
+      var data_nodes = [];
+      var data_edges = [];
+      var dictionary = {};
+      var lowest_score = 1000;
+      for(i = 0; i < data.length; i++){
+        data_tfidf.push(data[i]);
+        //dictionary[data[i]['']]
       }
-      else{
-        return 10;
-      }
-    });
-
-    force.on("tick",function(){
-      edges.attr("x1",function(d){return d.source.x;})
-      .attr("y1",function(d){return d.source.y;})
-      .attr("x2", function(d){return d.target.x;})
-      .attr("y2", function(d){return d.target.y;});
-
-      nodes.attr("cx", function(d){
-        if(d.name == 'center'){
-          d.x = 200;
+      for(i = 0; i < data_tfidf.length; i++){
+        data_nodes.push({name:(data_tfidf[i]['topic'] + "#" + data_tfidf[i]['tfidfscore'])});
+        if(data_tfidf[i]['tfidfscore'] < lowest_score){
+          lowest_score = data_tfidf[i]['tfidfscore'];
         }
-        return d.x;
+      }
+      data_nodes.push({name:'center'});
+      for(i = 0; i < data_nodes.length - 1; i++){
+        //data_edges.push({source: i, target: data_nodes.length - 1});
+        data_edges.push({source: i, target: i + 1})
+      }
+      var force = d3.layout.force()
+      .nodes(data_nodes)
+      .links(data_edges)
+      .size([600,600])
+      .linkDistance([90])
+      .charge([-100])
+      .start();
+
+      var edges = d3.select("#canvas").selectAll("line")
+      .data(data_edges)
+      .enter()
+      .append("line")
+      .style("stroke","#ccc")
+      .style("stroke-width",0);
+      var nodes = d3.select("#canvas").selectAll("circle")
+      .data(data_nodes)
+      .enter()
+      .append("circle")
+      .style("fill","green")
+      .attr("id",function(d){
+        return d.name;
       })
-      .attr("cy", function(d){
+      .attr("r",function(d){
         if(d.name == 'center'){
-          d.y = 200;
+          return 0;
         }
-        return d.y;
+        else{
+          var score = parseFloat(d.name.split("#")[1]);
+          return (10 + Math.exp(26 * (score - lowest_score)));
+        }
       });
+
+      force.on("tick",function(){
+        edges.attr("x1",function(d){return d.source.x;})
+        .attr("y1",function(d){return d.source.y;})
+        .attr("x2", function(d){return d.target.x;})
+        .attr("y2", function(d){return d.target.y;});
+
+        nodes.attr("cx", function(d){
+          if(d.name == 'center'){
+            d.x = 200;
+          }
+          return d.x;
+        })
+        .attr("cy", function(d){
+          if(d.name == 'center'){
+            d.y = 200;
+          }
+          return d.y;
+        });
+      });
+      $('svg circle').tipsy({
+        gravity: 'w',
+        html: true,
+        title: function(){
+          var d = this.id.split('#')[0];
+          return '' + d;
+        }
+      });
+
+
     });
+  }
 
-
-
+  draw_graph("others.csv");
+  $('input[name="my-checkbox"]').on('switchChange.bootstrapSwitch',function(){
+    svg.selectAll("*").remove();
+    if(this.checked){
+      draw_graph("others.csv");
+    }
+    else{
+      draw_graph("food_drink.csv");
+    }
   });
   </script>
 </body>
