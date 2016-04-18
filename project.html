@@ -63,7 +63,7 @@
         //dictionary[data[i]['']]
       }
       for(i = 0; i < data_tfidf.length; i++){
-        data_nodes.push({name:(data_tfidf[i]['topic'] + "#" + data_tfidf[i]['tfidfscore'])});
+        data_nodes.push({name:(data_tfidf[i]['topic'] + "%" + data_tfidf[i]['tfidfscore'])});
         if(data_tfidf[i]['tfidfscore'] < lowest_score){
           lowest_score = data_tfidf[i]['tfidfscore'];
         }
@@ -96,6 +96,7 @@
   var nodes = node.append("circle")
       .style("fill","green")
       .style("z-index",-1)
+      .attr("class","circles")
       .attr("id",function(d){
         return d.name;
       })
@@ -110,7 +111,7 @@
           return 0;
         }
         else{
-          var score = parseFloat(d.name.split("#")[1]);
+          var score = parseFloat(d.name.split("%")[1]);
           if(data_file == 'others.csv'){
           return (10 + Math.exp(26 * (score - lowest_score)));
         }
@@ -127,7 +128,7 @@
             if(d.name == "center"){
               return "";
             }
-            var name = d.name.split("#")[0];
+            var name = d.name.split("%")[0];
             return name;
           });
 
@@ -161,6 +162,15 @@
           },
           sort: {
             enabled: true
+          },
+          onClickEvent: function(){
+            var selected_data = $('#search_box').getSelectedItemData();
+            circle_id = selected_data['topic'] + '%' + selected_data['tfidfscore'];
+            //$(circle_id).attr("fill","yellow");
+            //console.log(circle_id);
+            d3.selectAll(".circles").style("fill","green");
+            document.getElementById(circle_id).style.fill = "yellow";
+            //d3.select('#' + circle_id).attr("fill","yellow");
           }
         }
       };
@@ -170,7 +180,7 @@
         gravity: 'w',
         html: true,
         title: function(){
-          var d = this.id.split('#')[0];
+          var d = this.id.split('%')[0];
           return '' + d;
         }
       });
@@ -178,7 +188,6 @@
 
     });
   }
-
   draw_graph("others.csv");
   $('input[name="my-checkbox"]').on('switchChange.bootstrapSwitch',function(){
     svg.selectAll("*").remove();
