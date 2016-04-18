@@ -33,6 +33,7 @@
   </script>
   <script type = "text/javascript">
   var svg;
+  var which_mode = "general";
   function getRandomColor(){
     var letters = '0123456789ABCDEF'.split('');
     var color = '#'
@@ -60,7 +61,6 @@
       var lowest_score = 1000;
       for(i = 0; i < data.length; i++){
         data_tfidf.push(data[i]);
-        //dictionary[data[i]['']]
       }
       for(i = 0; i < data_tfidf.length; i++){
         data_nodes.push({name:(data_tfidf[i]['topic'] + "%" + data_tfidf[i]['tfidfscore'])});
@@ -70,7 +70,6 @@
       }
       data_nodes.push({name:'center'});
       for(i = 0; i < data_nodes.length - 1; i++){
-        //data_edges.push({source: i, target: data_nodes.length - 1});
         data_edges.push({source: i, target: i + 1})
       }
       var force = d3.layout.force()
@@ -106,6 +105,10 @@
       .on("mouseout",function(d){
         d3.select(this).style("fill","green");
       })
+      .on("click",function(d){
+        var word_clicked = d.name.split('%')[0];
+        enter_word(word_clicked);
+      })
       .attr("r",function(d){
         if(d.name == 'center'){
           return 0;
@@ -138,19 +141,7 @@
         .attr("x2", function(d){return d.target.x;})
         .attr("y2", function(d){return d.target.y;});
         node.attr("transform",function(d){return "translate(" + d.x + "," + d.y + ")";});
-        /*nodes.attr("cx", function(d){
-          if(d.name == 'center'){
-            d.x = 200;
-          }
-          return d.x;
-        })
-        .attr("cy", function(d){
-          if(d.name == 'center'){
-            d.y = 200;
-          }
-          return d.y;
-        });*/
-        //text.parentNode.appendChild(this);
+
       });
       var options = {
         data: data_tfidf,
@@ -166,16 +157,15 @@
           onClickEvent: function(){
             var selected_data = $('#search_box').getSelectedItemData();
             circle_id = selected_data['topic'] + '%' + selected_data['tfidfscore'];
-            //$(circle_id).attr("fill","yellow");
-            //console.log(circle_id);
+
             d3.selectAll(".circles").style("fill","green");
             document.getElementById(circle_id).style.fill = "yellow";
-            //d3.select('#' + circle_id).attr("fill","yellow");
+
           }
         }
       };
       $("#search_box").easyAutocomplete(options);
-      //console.log(data_tfidf);
+
       $('svg circle').tipsy({
         gravity: 'w',
         html: true,
@@ -193,11 +183,48 @@
     svg.selectAll("*").remove();
     if(this.checked){
       draw_graph("others.csv");
+      which_mode = "general";
     }
     else{
       draw_graph("food_drink.csv");
+      which_mode = "food";
     }
+
   });
+  function return_to_previous(){
+    d3.select("body").selectAll("*").remove();
+    d3.select("body").append("h1").attr("align","center").text("Restaurant Review Visualization");
+    d3.select("body").append("p").text("Switch between topics:");
+    var checkbox = $('<input type = "checkbox" id = "topic_toggle" name = "my-checkbox" data-on-text = "General Aspects" data-off-text = "Food and Drinks"  checked>');
+    $('body').append(checkbox);
+    $("[name='my-checkbox']").bootstrapSwitch();
+    $("body").append('<p>Look for what you\'re concerned about:</p>');
+    $('body').append('<input id = "search_box">');
+    draw_svg();
+    draw_graph("others.csv");
+
+    $('input[name="my-checkbox"]').on('switchChange.bootstrapSwitch',function(){
+      svg.selectAll("*").remove();
+      if(this.checked){
+        draw_graph("others.csv");
+        which_mode = "general";
+      }
+      else{
+        draw_graph("food_drink.csv");
+        which_mode = "food";
+      }
+
+    });
+
+  }
+  function enter_word(word){
+   d3.select("body").selectAll("*").remove();
+   var return_button = $('<input type="button" value="Return" id="return_button" onclick = "return_to_previous()"/>');
+   var word_title = $('<h1>User Comments on ' + '"' + word + '"'+ '</h1>');
+   $("body").append(word_title);
+   $("body").append(return_button);
+
+  }
   </script>
 </body>
 </html>
