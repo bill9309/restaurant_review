@@ -9,13 +9,25 @@
   <script type = "text/javascript" src = "lib/d3.min.js"></script>
   <script type = "text/javascript" src = "lib/jquery.tipsy.js"></script>
   <script type = "text/javascript" src = "lib/bootstrap-switch.min.js"></script>
+  <script type = "text/javascript" src = "lib/jquery.easy-autocomplete.min.js"></script>
   <link rel = "stylesheet" type = "text/css" href = "lib/bootstrap.min.css">
   <link rel = "stylesheet" type = "text/css" href = "lib/bootstrap-switch.min.css">
   <link rel = "stylesheet" type = "text/css" href = "lib/tipsy.css">
+  <link rel = "stylesheet" type = "text/css" href = "lib/easy-autocomplete.min.css">
+  <style>
+  .node text{
+    pointer-events: none;
+    font: 10px sans-serif;
+    z-index: 1;
+  }
+  </style>
 </head>
 <body>
   <h1 align = "center">Restaurant Review Visualization</h1>
+  <p>Switch between topics:</p>
   <input type = "checkbox" id = "topic_toggle" name = "my-checkbox" data-on-text = "General Aspects" data-off-text = "Food and Drinks"  checked>
+  <p>Look for what you're concerned about:</p>
+  <input id = "search_box">
   <script type = "text/javascript">
   $("[name='my-checkbox']").bootstrapSwitch();
   </script>
@@ -65,7 +77,7 @@
       .nodes(data_nodes)
       .links(data_edges)
       .size([600,600])
-      .linkDistance([90])
+      .linkDistance([200])
       .charge([-100])
       .start();
 
@@ -75,13 +87,23 @@
       .append("line")
       .style("stroke","#ccc")
       .style("stroke-width",0);
-      var nodes = d3.select("#canvas").selectAll("circle")
-      .data(data_nodes)
-      .enter()
-      .append("circle")
+      var node = d3.select("#canvas").selectAll(".node")
+                  .data(data_nodes)
+                  .enter()
+                  .append("g")
+                  .attr("class","node");
+
+  var nodes = node.append("circle")
       .style("fill","green")
+      .style("z-index",-1)
       .attr("id",function(d){
         return d.name;
+      })
+      .on("mouseover",function(d){
+        d3.select(this).style("fill","red");
+      })
+      .on("mouseout",function(d){
+        d3.select(this).style("fill","green");
       })
       .attr("r",function(d){
         if(d.name == 'center'){
@@ -89,17 +111,33 @@
         }
         else{
           var score = parseFloat(d.name.split("#")[1]);
+          if(data_file == 'others.csv'){
           return (10 + Math.exp(26 * (score - lowest_score)));
         }
+        else{
+          return (Math.exp(18 * (score - lowest_score)));
+        }
+        }
       });
+      var text = node.append("text")
+          .attr("dx", 20)
+          .attr("dy", ".35em")
+          .style("z-index",1)
+          .text(function(d){
+            if(d.name == "center"){
+              return "";
+            }
+            var name = d.name.split("#")[0];
+            return name;
+          });
 
       force.on("tick",function(){
         edges.attr("x1",function(d){return d.source.x;})
         .attr("y1",function(d){return d.source.y;})
         .attr("x2", function(d){return d.target.x;})
         .attr("y2", function(d){return d.target.y;});
-
-        nodes.attr("cx", function(d){
+        node.attr("transform",function(d){return "translate(" + d.x + "," + d.y + ")";});
+        /*nodes.attr("cx", function(d){
           if(d.name == 'center'){
             d.x = 200;
           }
@@ -110,8 +148,24 @@
             d.y = 200;
           }
           return d.y;
-        });
+        });*/
+        //text.parentNode.appendChild(this);
       });
+      var options = {
+        data: data_tfidf,
+        getValue: "topic",
+        placeholder: "Search",
+        list:{
+          match: {
+            enabled: true
+          },
+          sort: {
+            enabled: true
+          }
+        }
+      };
+      $("#search_box").easyAutocomplete(options);
+      //console.log(data_tfidf);
       $('svg circle').tipsy({
         gravity: 'w',
         html: true,
