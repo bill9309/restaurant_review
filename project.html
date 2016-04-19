@@ -223,7 +223,14 @@
    var word_title = $('<h1>User Comments on ' + '"' + word + '"'+ '</h1>');
    $("body").append(word_title);
    $("body").append(return_button);
-
+   var svg = d3.select("body").append("svg");
+   var feature_data = [];
+   d3.csv("features_new.csv", function(error,data){
+      for(var i = 0; i < data.length; i++){
+         feature_data.push(data[i]);
+      }
+      console.log(feature_data);
+   });
   }
   </script>
 </body>
