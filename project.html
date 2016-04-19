@@ -228,7 +228,14 @@
     .style("margin-right","auto")
     .attr("id","word_canvas");
     var feature_data = [];
-    d3.select("body").select("svg").append("circle").attr("cx",300).attr("cy",300).style("fill","blue").attr("r",30);
+    d3.select("body").select("svg").append("circle").attr("cx",300).attr("cy",300).style("fill","blue").attr("r",35);
+    d3.select("body").select("svg").append("text")
+       .attr("x",280)
+       .attr("y",300)
+       .style("font-family","sans-serif")
+       .style("font-size",20)
+       .style("fill","yellow")
+       .text(word);
     d3.csv("processed_features.csv", function(error,data){
       var feature_dictionary = {};
       for(var i = 0; i < data.length; i++){
@@ -280,7 +287,10 @@
           return '';
         }
         else{
-        return d.name;
+        name = d.name.slice(1,d.name.length-1);
+        word = name.split('#')[0].slice(1,-1);
+        return word;
+
       }
       });
       var word_nodes = word_node.append("circle")
@@ -290,7 +300,9 @@
           return 0;
         }
         else{
-          return 5;
+          size = parseInt(d.name.slice(1,-1).split('#')[1]);
+
+          return 3 + 2 * size;
         }
       });
       word_force.on("tick",function(){
