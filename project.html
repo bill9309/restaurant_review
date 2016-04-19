@@ -219,17 +219,29 @@
   }
   function enter_word(word){
    d3.select("body").selectAll("*").remove();
-   var return_button = $('<input type="button" value="Return" id="return_button" onclick = "return_to_previous()"/>');
-   var word_title = $('<h1>User Comments on ' + '"' + word + '"'+ '</h1>');
+   var return_button = $('<div><button type="button" class="btn btn-primary" id="return_button" onclick = "return_to_previous()">Return</button></div>');
+   var word_title = $('<h1 align="center">User Comments on ' + '"' + word + '"'+ '</h1>');
    $("body").append(word_title);
    $("body").append(return_button);
-   var svg = d3.select("body").append("svg");
+   var svg = d3.select("body").append("svg").attr("width",700).attr("height",700).style("display","block")
+   .style("margin-left","auto")
+   .style("margin-right","auto")
+   .attr("id","word_canvas");
    var feature_data = [];
-   d3.csv("features_new.csv", function(error,data){
+   d3.csv("processed_features.csv", function(error,data){
+      var feature_dictionary = {};
       for(var i = 0; i < data.length; i++){
-         feature_data.push(data[i]);
+        feature_dictionary[data[i]['feature']] = [];
+        for(var j = 0; j < 31; j++){
+          if (data[i]['comment_' + j] == ''){
+            break;
+          }
+          else{
+            feature_dictionary[data[i]['feature']].push(data[i]['comment_' + j]);
+          }
+        }
       }
-      console.log(feature_data);
+      console.log(feature_dictionary);
    });
   }
   </script>
