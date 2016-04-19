@@ -43,14 +43,14 @@
     return color;
   }
   function draw_svg(){
-  svg = d3.select("body").append("svg")
-  .attr("width",700)
-  .attr("height",700)
-  .style("display","block")
-  .style("margin-left","auto")
-  .style("margin-right","auto")
-  .attr("id","canvas");
-}
+    svg = d3.select("body").append("svg")
+    .attr("width",700)
+    .attr("height",700)
+    .style("display","block")
+    .style("margin-left","auto")
+    .style("margin-right","auto")
+    .attr("id","canvas");
+  }
   draw_svg();
   function draw_graph(data_file){
     d3.csv(data_file,function(error,data){
@@ -87,12 +87,12 @@
       .style("stroke","#ccc")
       .style("stroke-width",0);
       var node = d3.select("#canvas").selectAll(".node")
-                  .data(data_nodes)
-                  .enter()
-                  .append("g")
-                  .attr("class","node");
+      .data(data_nodes)
+      .enter()
+      .append("g")
+      .attr("class","node");
 
-  var nodes = node.append("circle")
+      var nodes = node.append("circle")
       .style("fill","green")
       .style("z-index",-1)
       .attr("class","circles")
@@ -116,24 +116,24 @@
         else{
           var score = parseFloat(d.name.split("%")[1]);
           if(data_file == 'others.csv'){
-          return (10 + Math.exp(26 * (score - lowest_score)));
-        }
-        else{
-          return (Math.exp(18 * (score - lowest_score)));
-        }
+            return (10 + Math.exp(26 * (score - lowest_score)));
+          }
+          else{
+            return (Math.exp(18 * (score - lowest_score)));
+          }
         }
       });
       var text = node.append("text")
-          .attr("dx", 20)
-          .attr("dy", ".35em")
-          .style("z-index",1)
-          .text(function(d){
-            if(d.name == "center"){
-              return "";
-            }
-            var name = d.name.split("%")[0];
-            return name;
-          });
+      .attr("dx", -10)
+      .attr("dy", -15)
+      .style("z-index",1)
+      .text(function(d){
+        if(d.name == "center"){
+          return "";
+        }
+        var name = d.name.split("%")[0];
+        return name;
+      });
 
       force.on("tick",function(){
         edges.attr("x1",function(d){return d.source.x;})
@@ -218,17 +218,18 @@
 
   }
   function enter_word(word){
-   d3.select("body").selectAll("*").remove();
-   var return_button = $('<div><button type="button" class="btn btn-primary" id="return_button" onclick = "return_to_previous()">Return</button></div>');
-   var word_title = $('<h1 align="center">User Comments on ' + '"' + word + '"'+ '</h1>');
-   $("body").append(word_title);
-   $("body").append(return_button);
-   var svg = d3.select("body").append("svg").attr("width",700).attr("height",700).style("display","block")
-   .style("margin-left","auto")
-   .style("margin-right","auto")
-   .attr("id","word_canvas");
-   var feature_data = [];
-   d3.csv("processed_features.csv", function(error,data){
+    d3.select("body").selectAll("*").remove();
+    var return_button = $('<div><button type="button" class="btn btn-primary" id="return_button" onclick = "return_to_previous()">Return</button></div>');
+    var word_title = $('<h1 align="center">User Comments on ' + '"' + word + '"'+ '</h1>');
+    $("body").append(word_title);
+    $("body").append(return_button);
+    var svg = d3.select("body").append("svg").attr("width",700).attr("height",700).style("display","block")
+    .style("margin-left","auto")
+    .style("margin-right","auto")
+    .attr("id","word_canvas");
+    var feature_data = [];
+    d3.select("body").select("svg").append("circle").attr("cx",300).attr("cy",300).style("fill","blue").attr("r",30);
+    d3.csv("processed_features.csv", function(error,data){
       var feature_dictionary = {};
       for(var i = 0; i < data.length; i++){
         feature_dictionary[data[i]['feature']] = [];
@@ -241,8 +242,74 @@
           }
         }
       }
-      console.log(feature_dictionary);
-   });
+      var word_nodes = [];
+      var word_edges = [];
+      var comment_length = feature_dictionary[word].length;
+      for(var j = 0; j < comment_length; j++){
+        word_nodes.push({name: feature_dictionary[word][j]});
+      }
+      word_nodes.push({name: '#'});
+      for(j = 0; j < word_nodes.length; j++){
+        word_edges.push({source: j , target: word_nodes.length - 1});
+      }
+      var word_force = d3.layout.force()
+      .nodes(word_nodes)
+      .links(word_edges)
+      .size([600,600])
+      .linkDistance([200])
+      .charge([-100])
+      .start();
+
+      var word_edges = d3.select("#word_canvas").selectAll("line")
+      .data(word_edges)
+      .enter()
+      .append("line")
+      .style("stroke","#ccc")
+      .style("stroke-width",0);
+      var word_node = d3.select("#word_canvas").selectAll(".node")
+      .data(word_nodes)
+      .enter()
+      .append("g")
+      .attr("class","node");
+      var word_text = word_node.append("text")
+      .attr("dx", -10)
+      .attr("dy", -10)
+      .style("z-index",1)
+      .text(function(d){
+        if(d.name == '#'){
+          return '';
+        }
+        else{
+        return d.name;
+      }
+      });
+      var word_nodes = word_node.append("circle")
+      .style("fill","green")
+      .attr("r",function(d){
+        if(d.name == '#'){
+          return 0;
+        }
+        else{
+          return 5;
+        }
+      });
+      word_force.on("tick",function(){
+        word_edges.attr("x1",function(d){return d.source.x;})
+        .attr("y1",function(d){return d.source.y;})
+        .attr("x2", function(d){return d.target.x;})
+        .attr("y2", function(d){return d.target.y;});
+        word_node.attr("transform",function(d){
+          if(d.name == '#'){
+            return "translate(" + 300 + ',' + 300 + ')';
+          }
+          else{
+          return "translate(" + d.x + "," + d.y + ")";
+        }
+        });
+
+
+      });
+    });
   }
   </script>
 </body>

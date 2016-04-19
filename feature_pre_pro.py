@@ -32,3 +32,4 @@ for line in read_intermediate_file:
             result_file.write(line[i])
 read_intermediate_file.close()
 result_file.close()
+os.remove('intermediate.csv')
